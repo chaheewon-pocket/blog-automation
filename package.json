@@ -1,0 +1,47 @@
+{
+  "name": "blog-automation",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "init-db": "tsx scripts/initDb.ts",
+    "migrate": "tsx scripts/migrate.ts",
+    "login": "tsx scripts/login.ts",
+    "verify": "tsx scripts/verify.ts",
+    "scrape": "tsx scripts/scrape.ts",
+    "inspect": "tsx scripts/inspectStats.ts",
+    "inspect:rank": "tsx scripts/inspectStats.ts pocketclass1212 \"https://blog.stat.naver.com/blog/rankDetail/article?date=2026-05-07&timeDimension=DATE\"",
+    "inspect:referer": "tsx scripts/inspectStats.ts pocketclass1212 \"https://admin.blog.naver.com/pocketclass1212/stat/referer\"",
+    "find-neighbors": "tsx scripts/findNeighbors.ts",
+    "scheduler": "tsx scripts/scheduler.ts",
+    "find-comments": "tsx scripts/findComments.ts",
+    "fetch-trends": "tsx scripts/fetchTrends.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.0",
+    "better-sqlite3": "^12.9.0",
+    "next": "16.2.5",
+    "node-cron": "^4.2.1",
+    "openai": "^6.36.0",
+    "playwright": "^1.59.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.5",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
