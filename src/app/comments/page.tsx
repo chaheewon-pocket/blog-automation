@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { rejectComment } from "@/lib/actions";
 import CommentSendButton from "@/components/CommentSendButton";
+import { fmtTimestamp } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -200,7 +201,7 @@ export default async function CommentsPage({
                 ) : (
                   <div className="text-xs text-zinc-400">
                     {tab === "posted" && c.posted_at && (
-                      <>게시: {new Date(c.posted_at).toLocaleString("ko-KR")}</>
+                      <>게시: {fmtTimestamp(c.posted_at)}</>
                     )}
                     {tab === "rejected" && <>건너뜀</>}
                   </div>

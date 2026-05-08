@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "./db";
 import { clearSession } from "./playwright/session";
 import { runJobForAllBlogs, type JobName } from "./jobs/runner";
+import {
+  generatePostDraft,
+  type Length,
+  type Tone,
+} from "./ai/postDrafter";
 
 // ───────────────────────────────────────── Keywords ─────
 
@@ -310,6 +315,110 @@ export async function updateDataLabKeys(formData: FormData): Promise<void> {
   }
   revalidatePath("/settings");
   revalidatePath("/insights");
+}
+
+// ───────────────────────────────────────── Post drafts (M6) ─────
+
+export async function generateAndSaveDraft(
+  formData: FormData,
+): Promise<{
+  ok: boolean;
+  id?: number;
+  title?: string;
+  body?: string;
+  provider?: string;
+  error?: string;
+}> {
+  const blogId = Number(formData.get("blog_id"));
+  const topic = String(formData.get("topic") ?? "").trim();
+  const tone = String(formData.get("tone") ?? "informative") as Tone;
+  const length = String(formData.get("length") ?? "medium") as Length;
+  const keywordsRaw = String(formData.get("keywords") ?? "");
+  const keywords = keywordsRaw
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!Number.isInteger(blogId) || !topic) {
+    return { ok: false, error: "주제와 블로그가 필요해" };
+  }
+
+  try {
+    const result = await generatePostDraft({ topic, tone, length, keywords });
+    const db = getDb();
+    const insertResult = db
+      .prepare(
+        `INSERT INTO drafts (blog_id, topic, tone, length, keywords, title, body, ai_provider, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+      )
+      .run(
+        blogId,
+        topic,
+        tone,
+        length,
+        JSON.stringify(keywords),
+        result.title,
+        result.body,
+        result.provider,
+      );
+
+    revalidatePath("/drafts");
+
+    return {
+      ok: true,
+      id: insertResult.lastInsertRowid as number,
+      title: result.title,
+      body: result.body,
+      provider: result.provider,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function updateDraft(formData: FormData): Promise<void> {
+  const id = Number(formData.get("id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "");
+  if (!Number.isInteger(id) || !title) return;
+  const db = getDb();
+  db.prepare(
+    `UPDATE drafts SET title = ?, body = ?, status = 'edited', updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+  ).run(title, body, id);
+  revalidatePath("/drafts");
+}
+
+export async function deleteDraft(formData: FormData): Promise<void> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return;
+  const db = getDb();
+  db.prepare("DELETE FROM drafts WHERE id = ?").run(id);
+  revalidatePath("/drafts");
+}
+
+export async function markDraftPublished(
+  draftId: number,
+): Promise<{ ok: boolean; message: string }> {
+  if (!Number.isInteger(draftId))
+    return { ok: false, message: "id 누락" };
+  const db = getDb();
+  const row = db
+    .prepare("SELECT status FROM drafts WHERE id = ?")
+    .get(draftId) as { status: string } | undefined;
+  if (!row) return { ok: false, message: "초안 없음" };
+  if (row.status === "published")
+    return { ok: false, message: "이미 게시됨" };
+
+  db.prepare(
+    `UPDATE drafts SET status = 'published', published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+  ).run(draftId);
+  revalidatePath("/drafts");
+  return { ok: true, message: "OK" };
 }
 
 // ───────────────────────────────────────── Schedule ─────

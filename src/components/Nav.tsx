@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 const items = [
   { href: "/", label: "대시보드", icon: "📊" },
   { href: "/posts", label: "포스트 분석", icon: "📝" },
+  { href: "/writing", label: "글 작성", icon: "✍️" },
+  { href: "/drafts", label: "초안 보관함", icon: "📂" },
   { href: "/comments", label: "댓글 검토", icon: "💬" },
   { href: "/neighbors", label: "서로이웃", icon: "🤝" },
   { href: "/insights", label: "키워드 인사이트", icon: "📈" },

@@ -241,6 +241,28 @@ db.transaction(() => {
     "INSERT OR IGNORE INTO settings (key, value) VALUES ('openai_api_key', '')",
   ).run();
   console.log("  ✓ ai_provider + openai_api_key 자리 추가");
+
+  // 15. 자동 포스팅 초안 (M6)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS drafts (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      blog_id         INTEGER NOT NULL REFERENCES blogs(id),
+      topic           TEXT NOT NULL,
+      tone            TEXT NOT NULL,             -- informative|guide|review|casual
+      length          TEXT NOT NULL,             -- short|medium|long
+      keywords        TEXT,                       -- JSON array
+      title           TEXT,
+      body            TEXT,
+      ai_provider     TEXT,                       -- claude|openai|fallback
+      status          TEXT NOT NULL DEFAULT 'draft',  -- draft|edited|published
+      created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+      published_at    TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_drafts_blog_status
+      ON drafts(blog_id, status, created_at DESC);
+  `);
+  console.log("  ✓ drafts 테이블 생성");
 })();
 
 console.log("✅ 마이그레이션 완료");

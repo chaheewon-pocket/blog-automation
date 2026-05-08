@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { runJobNow, toggleJob, updateJobCron } from "@/lib/actions";
 import { JOB_LABELS, type JobName } from "@/lib/jobs/runner";
+import { fmtTimestamp, fmtShortTimestamp } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +133,7 @@ export default function SchedulePage() {
                     <div className="text-right text-xs">
                       <div className="text-zinc-400">마지막 실행</div>
                       <div className="font-mono">
-                        {new Date(last.started_at).toLocaleString("ko-KR")}
+                        {fmtTimestamp(last.started_at)}
                       </div>
                       <div>
                         <span
@@ -191,12 +192,7 @@ export default function SchedulePage() {
                     className="border-t border-zinc-100 dark:border-zinc-800"
                   >
                     <td className="px-6 py-2 font-mono text-xs">
-                      {new Date(r.started_at).toLocaleString("ko-KR", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {fmtShortTimestamp(r.started_at)}
                     </td>
                     <td className="px-6 py-2">
                       {JOB_LABELS[r.job_name as JobName] ?? r.job_name}

@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { fmtTimestamp } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export default async function PostsPage({
             {blog.alias} · 총 {totalCount}건
             {lastCollected && (
               <span className="ml-2 text-xs">
-                (조회수 마지막 수집: {new Date(lastCollected).toLocaleString("ko-KR")})
+                (조회수 마지막 수집: {fmtTimestamp(lastCollected)})
               </span>
             )}
           </p>
