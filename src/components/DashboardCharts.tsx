@@ -56,10 +56,13 @@ export default function DashboardCharts({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number, name: string) => [
-                  `${value}건 (${((value / total) * 100).toFixed(1)}%)`,
-                  name,
-                ]}
+                formatter={(value, name) => {
+                  const v = Number(value);
+                  return [
+                    `${v}건 (${((v / total) * 100).toFixed(1)}%)`,
+                    String(name),
+                  ];
+                }}
               />
               <Legend
                 verticalAlign="bottom"

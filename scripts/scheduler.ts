@@ -37,7 +37,7 @@ async function main() {
   console.log(`   블로그 ${blogs.length}개: ${blogs.map((b) => b.naver_id).join(", ")}`);
   console.log(`   잡 ${schedules.length}개 등록 중...\n`);
 
-  const tasks: cron.ScheduledTask[] = [];
+  const tasks: ReturnType<typeof cron.schedule>[] = [];
 
   for (const job of schedules) {
     if (!cron.validate(job.cron_expression)) {
