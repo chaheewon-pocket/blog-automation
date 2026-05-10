@@ -95,7 +95,7 @@ export default async function NeighborsPage({
         <div>
           <h1 className="text-3xl font-bold tracking-tight">🤝 서로이웃 관리</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            키워드로 발견한 블로그에 서로이웃 신청을 자동/반자동으로 보내. (M2에서 Playwright 연결 예정)
+            키워드로 발견한 블로그에 서로이웃 신청을 반자동으로 보내. 클릭 시 클립보드 복사 + 새 탭으로 열림.
           </p>
         </div>
 

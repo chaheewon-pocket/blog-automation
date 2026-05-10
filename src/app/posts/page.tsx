@@ -11,7 +11,6 @@ type Row = {
   url: string;
   published_at: string;
   views: number | null;
-  visitors: number | null;
   collected_at: string | null;
 };
 
@@ -44,10 +43,10 @@ export default async function PostsPage({
   const posts = db
     .prepare(
       `SELECT p.id, p.log_no, p.title, p.url, p.published_at,
-              s.views, s.visitors, s.collected_at
+              s.views, s.collected_at
          FROM posts p
          LEFT JOIN (
-           SELECT post_id, views, visitors, collected_at
+           SELECT post_id, views, collected_at
            FROM post_stats ps1
            WHERE ps1.collected_at = (
              SELECT MAX(collected_at) FROM post_stats ps2 WHERE ps2.post_id = ps1.post_id
@@ -118,13 +117,6 @@ export default async function PostsPage({
         </div>
       ) : (
         <>
-          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
-            💡 RSS로 포스트 메타(제목·URL·작성일)는 수집됐어. 조회수는 모바일 페이지를 직접 방문해서 가져와야 해. 터미널에서:
-            <code className="ml-2 rounded bg-blue-900/20 px-2 py-0.5 font-mono text-xs">
-              cmd /c "npm run scrape -- {blog.naver_id} --views"
-            </code>
-          </div>
-
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500 dark:bg-zinc-950">
@@ -132,7 +124,6 @@ export default async function PostsPage({
                   <th className="px-6 py-3">제목</th>
                   <th className="px-6 py-3 w-32">발행일</th>
                   <th className="px-6 py-3 text-right w-24">조회수</th>
-                  <th className="px-6 py-3 text-right w-24">방문자</th>
                   <th className="px-6 py-3 text-right w-20">바로가기</th>
                 </tr>
               </thead>
@@ -154,13 +145,6 @@ export default async function PostsPage({
                     <td className="px-6 py-4 text-right font-mono">
                       {p.views !== null ? (
                         p.views.toLocaleString()
-                      ) : (
-                        <span className="text-zinc-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono">
-                      {p.visitors !== null ? (
-                        p.visitors.toLocaleString()
                       ) : (
                         <span className="text-zinc-300">—</span>
                       )}
