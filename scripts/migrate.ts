@@ -263,6 +263,24 @@ db.transaction(() => {
       ON drafts(blog_id, status, created_at DESC);
   `);
   console.log("  ✓ drafts 테이블 생성");
+
+  // 16. 법령 라이브러리 (M7) — 자주 쓰는 법령 등록 → 글 작성 시 키워드 매칭으로 자동 참조
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS legal_library (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      title           TEXT NOT NULL,
+      category        TEXT,
+      tags            TEXT,                            -- JSON array, 매칭 키워드
+      content         TEXT NOT NULL,
+      source_url      TEXT,
+      enabled         INTEGER NOT NULL DEFAULT 1,
+      created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_legal_library_enabled
+      ON legal_library(enabled);
+  `);
+  console.log("  ✓ legal_library 테이블 생성 (M7)");
 })();
 
 console.log("✅ 마이그레이션 완료");

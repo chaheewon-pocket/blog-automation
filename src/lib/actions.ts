@@ -9,6 +9,11 @@ import {
   type Length,
   type Tone,
 } from "./ai/postDrafter";
+import { extractTextFromFile } from "./ai/fileExtractor";
+import {
+  matchLegalsForKeywords,
+  type MatchedLegal,
+} from "./ai/legalMatcher";
 
 // ───────────────────────────────────────── Keywords ─────
 
@@ -327,12 +332,14 @@ export async function generateAndSaveDraft(
   title?: string;
   body?: string;
   provider?: string;
+  warning?: string;
+  matchedLegals?: MatchedLegal[];
   error?: string;
 }> {
   const blogId = Number(formData.get("blog_id"));
   const topic = String(formData.get("topic") ?? "").trim();
   const tone = String(formData.get("tone") ?? "informative") as Tone;
-  const length = String(formData.get("length") ?? "medium") as Length;
+  const length = String(formData.get("length") ?? "long") as Length;
   const keywordsRaw = String(formData.get("keywords") ?? "");
   const keywords = keywordsRaw
     .split(/[,\n]/)
@@ -343,8 +350,48 @@ export async function generateAndSaveDraft(
     return { ok: false, error: "주제와 블로그가 필요해" };
   }
 
+  // 첨부 자료 추출 (선택)
+  let referenceText: string | undefined;
+  let referenceFileName: string | undefined;
+  let extractWarning: string | undefined;
+  const refFile = formData.get("reference_file");
+  if (refFile instanceof File && refFile.size > 0) {
+    try {
+      const extracted = await extractTextFromFile(refFile);
+      referenceText = extracted.text;
+      referenceFileName = refFile.name;
+      extractWarning = extracted.warning;
+    } catch (err) {
+      return {
+        ok: false,
+        error: `자료 추출 실패: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+  }
+
+  // 법령 라이브러리 자동 매칭 (키워드 → 등록된 법령)
+  const legalMatch = matchLegalsForKeywords(keywords);
+  if (legalMatch.combinedText) {
+    const libSection = `[법령 라이브러리에서 자동 참조한 자료]\n${legalMatch.combinedText}`;
+    const fileSection =
+      referenceText && referenceFileName
+        ? `\n\n[사용자 첨부 자료 — ${referenceFileName}]\n${referenceText}`
+        : "";
+    referenceText = libSection + fileSection;
+    referenceFileName = referenceFileName
+      ? `${referenceFileName} + 법령 라이브러리 ${legalMatch.matched.length}건`
+      : `법령 라이브러리 (${legalMatch.matched.length}건)`;
+  }
+
   try {
-    const result = await generatePostDraft({ topic, tone, length, keywords });
+    const result = await generatePostDraft({
+      topic,
+      tone,
+      length,
+      keywords,
+      referenceText,
+      referenceFileName,
+    });
     const db = getDb();
     const insertResult = db
       .prepare(
@@ -370,6 +417,8 @@ export async function generateAndSaveDraft(
       title: result.title,
       body: result.body,
       provider: result.provider,
+      warning: extractWarning,
+      matchedLegals: legalMatch.matched,
     };
   } catch (err) {
     return {
@@ -476,4 +525,76 @@ export async function seedDemoNeighbors(formData: FormData): Promise<void> {
     stmt.run(blogId, s.url, s.alias, s.keyword, msg);
   }
   revalidatePath("/neighbors");
+}
+
+// ───────────────────────────────────────── Legal Library (M7) ─────
+
+export async function addLegal(formData: FormData): Promise<void> {
+  const title = String(formData.get("title") ?? "").trim();
+  const category = String(formData.get("category") ?? "").trim() || null;
+  const tagsRaw = String(formData.get("tags") ?? "");
+  const content = String(formData.get("content") ?? "").trim();
+  const sourceUrl =
+    String(formData.get("source_url") ?? "").trim() || null;
+
+  if (!title || !content) return;
+
+  const tags = tagsRaw
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const tagsJson = JSON.stringify(tags);
+
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO legal_library (title, category, tags, content, source_url)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(title, category, tagsJson, content, sourceUrl);
+
+  revalidatePath("/library");
+}
+
+export async function updateLegal(formData: FormData): Promise<void> {
+  const id = Number(formData.get("id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const category = String(formData.get("category") ?? "").trim() || null;
+  const tagsRaw = String(formData.get("tags") ?? "");
+  const content = String(formData.get("content") ?? "").trim();
+  const sourceUrl =
+    String(formData.get("source_url") ?? "").trim() || null;
+
+  if (!Number.isInteger(id) || !title || !content) return;
+
+  const tags = tagsRaw
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const tagsJson = JSON.stringify(tags);
+
+  const db = getDb();
+  db.prepare(
+    `UPDATE legal_library
+       SET title = ?, category = ?, tags = ?, content = ?, source_url = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+  ).run(title, category, tagsJson, content, sourceUrl, id);
+
+  revalidatePath("/library");
+}
+
+export async function toggleLegal(formData: FormData): Promise<void> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return;
+  const db = getDb();
+  db.prepare(
+    "UPDATE legal_library SET enabled = 1 - enabled, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+  ).run(id);
+  revalidatePath("/library");
+}
+
+export async function deleteLegal(formData: FormData): Promise<void> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return;
+  const db = getDb();
+  db.prepare("DELETE FROM legal_library WHERE id = ?").run(id);
+  revalidatePath("/library");
 }

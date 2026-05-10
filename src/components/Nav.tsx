@@ -8,6 +8,7 @@ const items = [
   { href: "/posts", label: "포스트 분석", icon: "📝" },
   { href: "/writing", label: "글 작성", icon: "✍️" },
   { href: "/drafts", label: "초안 보관함", icon: "📂" },
+  { href: "/library", label: "법령 라이브러리", icon: "📖" },
   { href: "/comments", label: "댓글 검토", icon: "💬" },
   { href: "/neighbors", label: "서로이웃", icon: "🤝" },
   { href: "/insights", label: "키워드 인사이트", icon: "📈" },
@@ -53,10 +54,6 @@ export default function Nav() {
         })}
       </nav>
 
-      <div className="mt-8 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-        <div className="font-medium">M1 — 더미 데이터</div>
-        <div className="mt-1">스크래퍼 연결은 M2에서 진행</div>
-      </div>
     </aside>
   );
 }
